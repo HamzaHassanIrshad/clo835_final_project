@@ -1,0 +1,63 @@
+# 🚀 CLO835 Final Project - .gitignore
+# Simple and focused ignore patterns
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+
+# Docker
+.dockerignore
+
+# Kubernetes
+*.kubeconfig
+.kube/
+*.pem
+*.key
+*.crt
+
+# AWS
+.aws/
+aws-credentials.json
+*.pem
+*.key
+*.crt
+
+# Cloud9
+.c9/
+.c9project
+.c9settings
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Secrets and sensitive files
+secrets/
+*.secret
+*.password
+*.token
+
+# Temporary files
+tmp/
+temp/
+*.bak
+*.backup 

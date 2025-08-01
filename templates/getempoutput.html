@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Employee Information</title>
+    <style>
+      body {
+        background-image: url("/static/{{ bg_image }}");
+        background-size: cover;
+        background-repeat: no-repeat;
+        height: 100vh;
+        color: black;
+        font-family: Avenir;
+        text-align: center;
+      }
+
+      .output-container {
+        background-color: rgba(255, 255, 255, 0.9);
+        display: inline-block;
+        padding: 30px;
+        border-radius: 10px;
+        margin-top: 50px;
+      }
+
+      .employee-info {
+        text-align: left;
+        display: inline-block;
+        margin: 20px 0;
+      }
+
+      .employee-info p {
+        margin: 10px 0;
+        font-size: 16px;
+      }
+
+      .back-button {
+        background: #007bff;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        display: inline-block;
+        margin: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="output-container">
+      <h1 style="color: DodgerBlue">Employee Database</h1>
+      <h2>Project by {{ my_name }}</h2>
+
+      {% if id %}
+      <h3>Employee Information</h3>
+      <div class="employee-info">
+        <p><strong>Employee ID:</strong> {{ id }}</p>
+        <p><strong>First Name:</strong> {{ fname }}</p>
+        <p><strong>Last Name:</strong> {{ lname }}</p>
+        <p><strong>Primary Skills:</strong> {{ interest }}</p>
+        <p><strong>Location:</strong> {{ location }}</p>
+      </div>
+      {% else %}
+      <h3>Employee Not Found</h3>
+      <p>The employee with the specified ID was not found in the database.</p>
+      {% endif %}
+
+      <a href="/" class="back-button">Back to Home</a>
+      <a href="/getemp" class="back-button">Search Another Employee</a>
+    </div>
+  </body>
+</html>
