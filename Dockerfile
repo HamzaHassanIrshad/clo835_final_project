@@ -1,9 +1,9 @@
-# Use lighter image
+# Use a slim Python base image
 FROM python:3.9-slim
 
-# Install system packages
+# Install OS-level dependencies
 RUN apt-get update && \
-    apt-get install -y default-mysql-client gcc && \
+    apt-get install -y gcc default-mysql-client && \
     rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -15,12 +15,11 @@ COPY . .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create static folder to store background image
+# Make sure static directory exists
 RUN mkdir -p /app/static
 
-# Expose port 81 (as per project)
+# Expose port Flask will run on
 EXPOSE 81
 
-# Run Flask app
-ENTRYPOINT ["python3"]
-CMD ["app.py"]
+# Start the Flask app
+CMD ["python3", "app.py"]
