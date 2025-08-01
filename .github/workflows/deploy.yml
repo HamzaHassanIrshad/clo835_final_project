@@ -69,14 +69,38 @@ jobs:
             echo "Repository ${{ env.ECR_REPOSITORY }} already exists."
           fi
 
+      - name: Clean up existing images
+        run: |
+          echo "Cleaning up existing images in repository..."
+          # Get list of image digests
+          IMAGE_DIGESTS=$(aws ecr describe-images \
+            --repository-name ${{ env.ECR_REPOSITORY }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'imageDetails[].imageDigest' \
+            --output text 2>/dev/null || echo "")
+
+          if [ ! -z "$IMAGE_DIGESTS" ]; then
+            echo "Found existing images. Deleting them..."
+            # Delete all images in the repository
+            aws ecr batch-delete-image \
+              --repository-name ${{ env.ECR_REPOSITORY }} \
+              --region ${{ env.AWS_REGION }} \
+              --image-ids $(aws ecr describe-images \
+                --repository-name ${{ env.ECR_REPOSITORY }} \
+                --region ${{ env.AWS_REGION }} \
+                --query 'imageDetails[].{imageDigest:imageDigest}' \
+                --output json | jq -r '.[] | "imageDigest=" + .imageDigest' | tr '\n' ' ')
+            echo "Existing images deleted successfully!"
+          else
+            echo "No existing images found."
+          fi
+
       - name: Build, tag, and push image to Amazon ECR
         id: build
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:latest" >> $GITHUB_OUTPUT
