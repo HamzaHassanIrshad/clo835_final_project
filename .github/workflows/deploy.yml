@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [dev-hamza]
+    branches: [dev]
   pull_request:
     branches: [main]
 
