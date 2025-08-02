@@ -28,7 +28,7 @@ def download_image():
         s3 = boto3.client("s3")
         bucket_name = BACKGROUND_IMAGE_URL.split("/")[2].split(".")[0]
         key = "/".join(BACKGROUND_IMAGE_URL.split("/")[3:])
-        s3.download_file(bucket_name, key, "static/bg.jpg")
+        s3.download_file(bucket_name, key, "static/bg.svg")
         print(f"Downloaded background image from: {BACKGROUND_IMAGE_URL}")
     except Exception as e:
         print(f"Error downloading image: {e}")
@@ -51,11 +51,11 @@ def get_db_connection():
 @app.route("/", methods=["GET", "POST"])
 def home():
     download_image()
-    return render_template("addemp.html", bg_image="bg.jpg", my_name=MY_NAME)
+    return render_template("addemp.html", bg_image="bg.svg", my_name=MY_NAME)
 
 @app.route("/about", methods=["GET", "POST"])
 def about():
-    return render_template("about.html", bg_image="bg.jpg", my_name=MY_NAME)
+    return render_template("about.html", bg_image="bg.svg", my_name=MY_NAME)
 
 @app.route("/addemp", methods=["POST"])
 def AddEmp():
@@ -67,7 +67,7 @@ def AddEmp():
 
     db_conn = get_db_connection()
     if not db_conn:
-        return render_template("error.html", message="Database connection failed", bg_image="bg.jpg", my_name=MY_NAME)
+        return render_template("error.html", message="Database connection failed", bg_image="bg.svg", my_name=MY_NAME)
 
     insert_sql = "INSERT INTO employee VALUES (%s, %s, %s, %s, %s)"
     cursor = db_conn.cursor()
@@ -83,11 +83,11 @@ def AddEmp():
         cursor.close()
         db_conn.close()
 
-    return render_template("addempoutput.html", name=emp_name, bg_image="bg.jpg", my_name=MY_NAME)
+    return render_template("addempoutput.html", name=emp_name, bg_image="bg.svg", my_name=MY_NAME)
 
 @app.route("/getemp", methods=["GET", "POST"])
 def GetEmp():
-    return render_template("getemp.html", bg_image="bg.jpg", my_name=MY_NAME)
+    return render_template("getemp.html", bg_image="bg.svg", my_name=MY_NAME)
 
 @app.route("/fetchdata", methods=["GET", "POST"])
 def FetchData():
@@ -96,7 +96,7 @@ def FetchData():
     
     db_conn = get_db_connection()
     if not db_conn:
-        return render_template("error.html", message="Database connection failed", bg_image="bg.jpg", my_name=MY_NAME)
+        return render_template("error.html", message="Database connection failed", bg_image="bg.svg", my_name=MY_NAME)
 
     select_sql = "SELECT emp_id, first_name, last_name, primary_skill, location FROM employee WHERE emp_id=%s"
     cursor = db_conn.cursor()
@@ -117,7 +117,7 @@ def FetchData():
 
     return render_template("getempoutput.html", id=output.get("emp_id"), fname=output.get("first_name"),
                            lname=output.get("last_name"), interest=output.get("primary_skills"),
-                           location=output.get("location"), bg_image="bg.jpg", my_name=MY_NAME)
+                           location=output.get("location"), bg_image="bg.svg", my_name=MY_NAME)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=81, debug=True)
