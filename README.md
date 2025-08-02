@@ -86,29 +86,104 @@ This is a **CLO835 Final Project** that demonstrates a complete modern cloud-nat
 
 ### 🛠️ Required Tools (AWS Cloud9)
 
-Since you're using AWS Cloud9, most tools are pre-installed. You may need to update some:
+**Complete Cloud9 Setup (Professor's Instructions):**
 
 ```bash
-# Update AWS CLI (if needed)
-pip install --upgrade awscli
+# 1. Configure AWS CLI v2 and disable Cloud9 temporary credentials
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
 
-# Update kubectl (if needed)
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+# Verify AWS CLI version
+/usr/local/bin/aws --version
 
-# Install eksctl (if not already installed)
+# Disable Cloud9 temporary credentials
+/usr/local/bin/aws cloud9 update-environment --environment-id $C9_PID --managed-credentials-action DISABLE
+
+# Remove existing credentials
+rm -vf ${HOME}/.aws/credentials
+
+# 2. Install required tools
+sudo yum -y install jq gettext bash-completion moreutils
+
+# 3. Install eksctl
 curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-sudo mv /tmp/eksctl /usr/local/bin
+sudo mv -v /tmp/eksctl /usr/local/bin
 
-# Install Flux CLI (for GitOps)
+# Enable eksctl bash completion
+eksctl completion bash >> ~/.bash_completion
+. /etc/profile.d/bash_completion.sh
+. ~/.bash_completion
+
+# 4. Install kubectl (version 1.31.0 as of Winter 2025)
+export VERSION=v1.31.0
+curl -LO "https://dl.k8s.io/release/$VERSION/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+rm -f ./kubectl
+
+# Optional: kubectl bash completion
+kubectl completion bash >> ~/.bash_completion
+. /etc/profile.d/bash_completion.sh
+. ~/.bash_completion
+
+# Optional: Add kubectl alias
+echo "alias k=kubectl" >> ~/.bashrc
+. ~/.bashrc
+
+# 5. Set LoadBalancer Controller version
+echo 'export LBC_VERSION="v2.4.1"' >> ~/.bash_profile
+echo 'export LBC_CHART_VERSION="1.4.1"' >> ~/.bash_profile
+. ~/.bash_profile
+
+# 6. Install Flux CLI (for GitOps)
 curl -s https://fluxcd.io/install.sh | sudo bash
+
+# Optional: Increase disk space of Cloud9
+# https://www.eksworkshop.com/020_prerequisites/workspace/
 ```
+
+**Important Notes:**
+
+- Use AWS CLI v2 (not v1)
+- Disable Cloud9 temporary credentials
+- Use kubectl version 1.31.0 (matches EKS cluster version)
+- Configure permanent AWS credentials from AWS Academy
+- Consider increasing Cloud9 disk space if needed for larger projects
 
 ### 🔑 Required Accounts & Permissions
 
 - **AWS Account** with EKS, ECR, S3, and IAM permissions
 - **GitHub Account** with repository access
 - **AWS IAM User** with programmatic access
+
+### 🔐 AWS Credentials Configuration
+
+**After running the Cloud9 setup commands above:**
+
+1. **Get your AWS Academy credentials** from the AWS Details page
+2. **Configure permanent credentials:**
+
+   ```bash
+   # Use credentials from AWS Academy AWS Details and copy them into ~/.aws/credentials file
+   aws configure
+   # Enter your AWS Access Key ID
+   # Enter your AWS Secret Access Key
+   # Enter your default region (us-east-1)
+   # Enter your output format (json)
+   ```
+
+3. **Alternative: Set environment variables:**
+   ```bash
+   export AWS_ACCESS_KEY_ID=your_key
+   export AWS_SECRET_ACCESS_KEY=your_secret
+   export AWS_DEFAULT_REGION=us-east-1
+   ```
+
+**Troubleshooting:**
+
+- If you have authentication issues, delete the token line in `~/.aws/credentials`
+- Make sure you're using AWS CLI v2, not v1
+- Verify credentials work: `aws sts get-caller-identity`
 
 ### 💰 Cost Estimation
 
@@ -172,20 +247,34 @@ aws configure
 
 ### 3. Create EKS Cluster
 
-#### Using ClusterConfig File (Recommended):
+#### Using ClusterConfig File (Professor's Method):
 
 ```bash
-# Create EKS cluster using the provided configuration
+# Create the cluster - these steps will take a few minutes
+# Make sure to edit the eks-config.yaml and specify your Account Id in place of [YOUR AWS ACCOUNT]
+# Update the version entry to ensure we use the version supported by AWS EKS
+
 eksctl create cluster -f eks-config.yaml
 
-# Update kubeconfig
+# Switch to CloudFormation service, examine the resources that are being created
+# Update your Kube config
 aws eks update-kubeconfig --name clo835-cluster --region us-east-1
 
 # Verify cluster
 kubectl get nodes
 ```
 
-**Note**: This takes 15-20 minutes to complete.
+**Important Notes:**
+
+- This takes 15-20 minutes to complete
+- Monitor CloudFormation console to see resources being created
+- If you have problems using "aws configure" and authenticating to K8s, delete the token line in ~/.aws/credentials
+- As a last resort, export your credentials as environment variables:
+  ```bash
+  export AWS_ACCESS_KEY_ID=your_key
+  export AWS_SECRET_ACCESS_KEY=your_secret
+  export AWS_DEFAULT_REGION=us-east-1
+  ```
 
 ### 4. Deploy Application
 
