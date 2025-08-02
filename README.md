@@ -6,19 +6,18 @@
 [![Docker](https://img.shields.io/badge/Docker-Containerized-blue?logo=docker)](https://www.docker.com/)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-Orchestrated-blue?logo=kubernetes)](https://kubernetes.io/)
 [![AWS EKS](https://img.shields.io/badge/AWS-EKS-orange?logo=amazon-aws)](https://aws.amazon.com/eks/)
-[![Flux](https://img.shields.io/badge/Flux-GitOps-purple?logo=flux)](https://fluxcd.io/)
 
 ## 📋 Table of Contents
 
 - [🎯 Project Overview](#-project-overview)
 - [🏗️ Architecture](#️-architecture)
 - [📋 Prerequisites](#-prerequisites)
-- [⚡ Quick Start (5 Minutes)](#-quick-start-5-minutes)
+- [⚡ Quick Start](#-quick-start)
 - [🔧 Detailed Setup](#-detailed-setup)
 - [🚀 Deployment](#-deployment)
 - [🧪 Testing](#-testing)
 - [📊 Monitoring & Scaling](#-monitoring--scaling)
-- [🔄 GitOps with Flux](#-gitops-with-flux)
+
 - [🔍 Troubleshooting](#-troubleshooting)
 - [🧹 Cleanup](#-cleanup)
 - [📚 Reference](#-reference)
@@ -37,7 +36,6 @@ This is a **CLO835 Final Project** that demonstrates a complete modern cloud-nat
 - **📦 Container Registry** on Amazon ECR
 - **☸️ Kubernetes Orchestration** on Amazon EKS
 - **📈 Auto-scaling** with Horizontal Pod Autoscaler (HPA)
-- **🔄 GitOps** deployment with Flux (Bonus)
 
 ### 🏆 Assignment Requirements Met
 
@@ -54,7 +52,6 @@ This is a **CLO835 Final Project** that demonstrates a complete modern cloud-nat
 - ✅ Role/RoleBinding for namespace permissions
 - ✅ LoadBalancer service for internet access
 - ✅ HPA for auto-scaling (Bonus)
-- ✅ Flux GitOps deployment (Bonus)
 
 ## 🏗️ Architecture
 
@@ -65,7 +62,7 @@ This is a **CLO835 Final Project** that demonstrates a complete modern cloud-nat
 
 **Deployment:**
 
-- **Flux (GitOps)** monitors the repository and syncs to **Amazon EKS**
+- **GitHub Actions** builds and pushes Docker images to **ECR**
 - **EKS Cluster** pulls Docker images from **ECR** and deploys the application
 
 **Application Stack:**
@@ -78,18 +75,61 @@ This is a **CLO835 Final Project** that demonstrates a complete modern cloud-nat
 
 1. Code pushed to GitHub
 2. GitHub Actions builds and pushes Docker image to ECR
-3. Flux detects changes and deploys to EKS
+3. Manual deployment to EKS using kubectl
 4. Application runs with MySQL database
 5. Application fetches background images from S3
+
+## 🔒 Security Best Practices
+
+### ⚠️ **CRITICAL: Never Commit Credentials!**
+
+**This project contains sensitive AWS credentials. Follow these security practices:**
+
+1. **Never commit credentials to Git**
+
+   - AWS access keys, secret keys, and session tokens
+   - Database passwords
+   - Private keys or certificates
+
+2. **Use .gitignore properly**
+
+   - The `.gitignore` file is configured to exclude sensitive files
+   - Always check what you're committing with `git status`
+
+3. **Use temporary files for secrets**
+
+   - Create secrets dynamically during deployment
+   - Delete temporary files immediately after use
+
+4. **Rotate credentials regularly**
+
+   - AWS Academy credentials expire automatically
+   - Update your local credentials when they change
+
+5. **Check your commits**
+   - Use `git log --oneline` to review recent commits
+   - If credentials were accidentally committed, remove them immediately
+
+### 🛡️ **If Credentials Were Committed:**
+
+```bash
+# Remove from git history (if credentials were committed)
+git filter-branch --force --index-filter \
+  "git rm --cached --ignore-unmatch k8s/aws-credentials-secret.yaml" \
+  --prune-empty --tag-name-filter cat -- --all
+
+# Force push to remove from remote repository
+git push origin --force --all
+```
 
 ## 📋 Prerequisites
 
 ### 🛠️ Required Tools (AWS Cloud9)
 
-**Complete Cloud9 Setup (Professor's Instructions):**
+**Complete Cloud9 Setup:**
 
 ```bash
-# 1. Configure AWS CLI v2 and disable Cloud9 temporary credentials
+# 1. Install AWS CLI v2 and disable Cloud9 temporary credentials
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 unzip awscliv2.zip
 sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
@@ -115,8 +155,8 @@ eksctl completion bash >> ~/.bash_completion
 . /etc/profile.d/bash_completion.sh
 . ~/.bash_completion
 
-# 4. Install kubectl (version 1.31.0 as of Winter 2025)
-export VERSION=v1.31.0
+# 4. Install kubectl (version 1.29.0 as of Winter 2025)
+export VERSION=v1.29.0
 curl -LO "https://dl.k8s.io/release/$VERSION/bin/linux/amd64/kubectl"
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 rm -f ./kubectl
@@ -135,20 +175,15 @@ echo 'export LBC_VERSION="v2.4.1"' >> ~/.bash_profile
 echo 'export LBC_CHART_VERSION="1.4.1"' >> ~/.bash_profile
 . ~/.bash_profile
 
-# 6. Install Flux CLI (for GitOps)
-curl -s https://fluxcd.io/install.sh | sudo bash
 
-# Optional: Increase disk space of Cloud9
-# https://www.eksworkshop.com/020_prerequisites/workspace/
 ```
 
 **Important Notes:**
 
 - Use AWS CLI v2 (not v1)
 - Disable Cloud9 temporary credentials
-- Use kubectl version 1.31.0 (matches EKS cluster version)
+- Use kubectl version 1.29.0 (matches EKS cluster version)
 - Configure permanent AWS credentials from AWS Academy
-- Consider increasing Cloud9 disk space if needed for larger projects
 
 ### 🔑 Required Accounts & Permissions
 
@@ -156,44 +191,33 @@ curl -s https://fluxcd.io/install.sh | sudo bash
 - **GitHub Account** with repository access
 - **AWS IAM User** with programmatic access
 
-### 🔐 AWS Credentials Configuration
+### 🔐 AWS Credentials Setup
 
 **After running the Cloud9 setup commands above:**
 
 1. **Get your AWS Academy credentials** from the AWS Details page
-2. **Configure permanent credentials:**
+2. **Create credentials file:**
 
    ```bash
-   # Use credentials from AWS Academy AWS Details and copy them into ~/.aws/credentials file
-   aws configure
-   # Enter your AWS Access Key ID
-   # Enter your AWS Secret Access Key
-   # Enter your default region (us-east-1)
-   # Enter your output format (json)
+   # Create the credentials file
+   mkdir -p ~/.aws
+   cat > ~/.aws/credentials << EOF
+   [default]
+   aws_access_key_id = YOUR_ACCESS_KEY_HERE
+   aws_secret_access_key = YOUR_SECRET_KEY_HERE
+   aws_session_token = YOUR_SESSION_TOKEN_HERE
+   region = us-east-1
+   output = json
+   EOF
    ```
 
-3. **Alternative: Set environment variables:**
+3. **Replace the placeholders** with your actual AWS Academy credentials (including the session token)
+4. **Verify credentials work:**
    ```bash
-   export AWS_ACCESS_KEY_ID=your_key
-   export AWS_SECRET_ACCESS_KEY=your_secret
-   export AWS_DEFAULT_REGION=us-east-1
+   aws sts get-caller-identity
    ```
 
-**Troubleshooting:**
-
-- If you have authentication issues, delete the token line in `~/.aws/credentials`
-- Make sure you're using AWS CLI v2, not v1
-- Verify credentials work: `aws sts get-caller-identity`
-
-### 💰 Cost Estimation
-
-- **EKS Cluster**: ~$0.10/hour per node (2 nodes = ~$0.20/hour)
-- **ECR Storage**: ~$0.10/GB/month
-- **S3 Storage**: ~$0.023/GB/month
-- **Load Balancer**: ~$0.0225/hour
-- **Total**: ~$15-20/month for development
-
-## ⚡ Quick Start (Step-by-Step Commands)
+## ⚡ Quick Start
 
 ### 1. Prerequisites Check
 
@@ -203,8 +227,8 @@ eksctl version
 kubectl version --client
 aws --version
 
-# Configure AWS credentials (if not already done)
-aws configure
+# Verify AWS credentials
+aws sts get-caller-identity
 ```
 
 ### 2. Create S3 Bucket and Upload Background Image
@@ -237,28 +261,22 @@ aws configure
   <rect width="100%" height="100%" fill="url(#grad1)"/>
   <text x="600" y="300" font-family="Arial, sans-serif" font-size="48" fill="white" text-anchor="middle" font-weight="bold">CLO835 Final Project</text>
   <text x="600" y="350" font-family="Arial, sans-serif" font-size="24" fill="white" text-anchor="middle">Container Orchestration with Kubernetes</text>
-  <text x="600" y="400" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle">Hamza - CLO835 Student</text>
+  <text x="600" y="400" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle">Hamza, Sanjan Joshua, Rentian Zhang - CLO835 Students</text>
 </svg>
 ```
 
-4. Upload it as `background.jpg`
+4. Upload it as `background.svg`
 5. Set permissions: "Grant public-read access"
 6. Click "Upload"
 
 ### 3. Create EKS Cluster
 
-#### Using ClusterConfig File (Professor's Method):
-
 ```bash
-# Create the cluster - these steps will take a few minutes
-# Make sure to edit the eks-config.yaml and specify your Account Id in place of [YOUR AWS ACCOUNT]
-# Update the version entry to ensure we use the version supported by AWS EKS
-
+# Create the cluster using the provided configuration
 eksctl create cluster -f eks-config.yaml
 
-# Switch to CloudFormation service, examine the resources that are being created
 # Update your Kube config
-aws eks update-kubeconfig --name clo835-cluster --region us-east-1
+aws eks update-kubeconfig --name clo835-final-project --region us-east-1
 
 # Verify cluster
 kubectl get nodes
@@ -268,13 +286,7 @@ kubectl get nodes
 
 - This takes 15-20 minutes to complete
 - Monitor CloudFormation console to see resources being created
-- If you have problems using "aws configure" and authenticating to K8s, delete the token line in ~/.aws/credentials
-- As a last resort, export your credentials as environment variables:
-  ```bash
-  export AWS_ACCESS_KEY_ID=your_key
-  export AWS_SECRET_ACCESS_KEY=your_secret
-  export AWS_DEFAULT_REGION=us-east-1
-  ```
+- The `eks-config.yaml` uses existing IAM roles to avoid permission issues
 
 ### 4. Deploy Application
 
@@ -282,17 +294,22 @@ kubectl get nodes
 # Create namespace
 kubectl create namespace final
 
-# Deploy all resources
+# Deploy all resources (excluding credentials)
 kubectl apply -f k8s/namespace.yaml
 kubectl apply -f k8s/secret.yaml
 kubectl apply -f k8s/configmap.yaml
 kubectl apply -f k8s/pvc.yaml
 kubectl apply -f k8s/serviceaccount.yaml
 kubectl apply -f k8s/role.yaml
+
+# Deploy AWS credentials secret (created dynamically)
+# Follow the "Update AWS Credentials Secret" section above
+
 kubectl apply -f k8s/mysql-deployment.yaml
 kubectl apply -f k8s/mysql-service.yaml
 kubectl apply -f k8s/flask-deployment.yaml
 kubectl apply -f k8s/flask-service.yaml
+kubectl apply -f k8s/hpa.yaml
 ```
 
 ### 5. Verify Deployment
@@ -323,127 +340,7 @@ kubectl get svc flask-service -n final
 
 ## 🔧 Detailed Setup
 
-### Step 1: AWS Configuration
-
-#### Configure AWS CLI
-
-```bash
-aws configure
-# Enter your AWS Access Key ID
-# Enter your AWS Secret Access Key
-# Enter your default region (us-east-1)
-# Enter your output format (json)
-```
-
-#### EKS Cluster Configuration
-
-The project includes a working `eks-config.yaml` file that uses existing IAM roles to avoid permission issues:
-
-```yaml
----
-apiVersion: eksctl.io/v1alpha5
-kind: ClusterConfig
-
-metadata:
-  name: clo835-cluster
-  region: "us-east-1"
-  version: "1.29"
-
-availabilityZones: ["us-east-1a", "us-east-1b", "us-east-1c"]
-
-iam:
-  serviceRoleARN: arn:aws:iam::626108377158:role/LabRole
-
-managedNodeGroups:
-  - name: clo835-workers
-    instanceType: t3.medium
-    desiredCapacity: 2
-    minSize: 2
-    maxSize: 4
-    iam:
-      instanceRoleARN: arn:aws:iam::626108377158:role/LabRole
-    ssh:
-      enableSsm: true
-```
-
-**To create the cluster:**
-
-```bash
-eksctl create cluster -f eks-config.yaml
-```
-
-#### Create IAM Role for S3 Access
-
-```bash
-# Create trust policy
-cat > trust-policy.json << EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::YOUR_ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-        }
-      }
-    }
-  ]
-}
-EOF
-
-# Create the role
-aws iam create-role \
-  --role-name CLO835-S3-Access-Role \
-  --assume-role-policy-document file://trust-policy.json
-
-# Attach S3 read policy
-aws iam attach-role-policy \
-  --role-name CLO835-S3-Access-Role \
-  --policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
-```
-
-#### Create S3 Bucket and Upload Image
-
-```bash
-# Create bucket
-aws s3 mb s3://your-clo835-background-images --region us-east-1
-
-# Make bucket private
-aws s3api put-bucket-acl \
-  --bucket your-clo835-background-images \
-  --acl private
-
-# Upload a background image
-aws s3 cp /path/to/your/background.jpg s3://your-clo835-background-images/background.jpg
-
-# Verify upload
-aws s3 ls s3://your-clo835-background-images/
-```
-
-### Step 2: GitHub Configuration
-
-#### Set Up GitHub Secrets
-
-Go to your GitHub repository → Settings → Secrets and variables → Actions, and add:
-
-```bash
-AWS_ACCESS_KEY_ID=your_access_key
-AWS_SECRET_ACCESS_KEY=your_secret_key
-```
-
-#### Update Repository URLs
-
-```bash
-# Update Flux configuration with your GitHub username
-sed -i 's/YOUR_USERNAME/your-actual-github-username/g' flux/gotk-sync.yaml
-```
-
-### Step 3: Update Configuration Files
+### Step 1: Update Configuration Files
 
 #### Update ConfigMap
 
@@ -452,8 +349,8 @@ sed -i 's/YOUR_USERNAME/your-actual-github-username/g' flux/gotk-sync.yaml
 vim k8s/configmap.yaml
 
 # Replace with your actual values:
-# BACKGROUND_IMAGE_URL: "https://your-clo835-background-images.s3.amazonaws.com/background.jpg"
-# MY_NAME: "Your Name (CLO835 Student)"
+# BACKGROUND_IMAGE_URL: "https://your-clo835-background-images.s3.amazonaws.com/background.svg"
+# MY_NAME: "Hamza, Sanjan Joshua, Rentian Zhang (CLO835 Students)"
 ```
 
 #### Update Flask Deployment
@@ -473,113 +370,73 @@ sed -i "s/YOUR_ACCOUNT_ID/$AWS_ACCOUNT_ID/g" k8s/flask-deployment.yaml
 sed -i "s/YOUR_ACCOUNT_ID/$AWS_ACCOUNT_ID/g" k8s/serviceaccount.yaml
 ```
 
+#### Update AWS Credentials Secret
+
+**⚠️ IMPORTANT: Never commit credentials to Git!**
+
+```bash
+# Get your AWS credentials from ~/.aws/credentials
+AWS_ACCESS_KEY=$(grep aws_access_key_id ~/.aws/credentials | cut -d'=' -f2 | tr -d ' ')
+AWS_SECRET_KEY=$(grep aws_secret_access_key ~/.aws/credentials | cut -d'=' -f2 | tr -d ' ')
+AWS_SESSION_TOKEN=$(grep aws_session_token ~/.aws/credentials | cut -d'=' -f2 | tr -d ' ')
+
+# Base64 encode the credentials
+ACCESS_KEY_B64=$(echo -n "$AWS_ACCESS_KEY" | base64)
+SECRET_KEY_B64=$(echo -n "$AWS_SECRET_KEY" | base64)
+SESSION_TOKEN_B64=$(echo -n "$AWS_SESSION_TOKEN" | base64)
+
+# Create a temporary secret file (DO NOT COMMIT THIS!)
+cat > k8s/aws-credentials-secret-temp.yaml << EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-credentials
+  namespace: final
+type: Opaque
+data:
+  access-key-id: $ACCESS_KEY_B64
+  secret-access-key: $SECRET_KEY_B64
+  session-token: $SESSION_TOKEN_B64
+EOF
+
+# Apply the secret and then delete the temp file
+kubectl apply -f k8s/aws-credentials-secret-temp.yaml
+rm k8s/aws-credentials-secret-temp.yaml
+```
+
+### Step 2: GitHub Configuration
+
+#### Set Up GitHub Secrets
+
+Go to your GitHub repository → Settings → Secrets and variables → Actions, and add:
+
+```bash
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+```
+
+#### Update Repository URLs
+
+```bash
+
+```
+
 ## 🚀 Deployment
 
-### Option 1: Automated Deployment (Recommended)
+### Option 1: Manual Deployment (Recommended for Beginners)
 
 ```bash
 # Create EKS cluster
-eksctl create cluster \
-  --name clo835-cluster \
-  --region us-east-1 \
-  --nodegroup-name standard-workers \
-  --node-type t3.medium \
-  --nodes 2 \
-  --nodes-min 1 \
-  --nodes-max 3 \
-  --managed \
-  --with-oidc
+eksctl create cluster -f eks-config.yaml
 
 # Update kubeconfig
-aws eks update-kubeconfig --name clo835-cluster --region us-east-1
+aws eks update-kubeconfig --name clo835-final-project --region us-east-1
 
 # Deploy all resources
 kubectl apply -f k8s/
 
 # Check deployment status
 kubectl get all -n final
-```
-
-### Option 2: Manual Deployment
-
-#### Create EKS Cluster
-
-```bash
-# Create cluster with eksctl
-eksctl create cluster \
-  --name clo835-cluster \
-  --region us-east-1 \
-  --nodegroup-name standard-workers \
-  --node-type t3.medium \
-  --nodes 2 \
-  --nodes-min 1 \
-  --nodes-max 3 \
-  --managed \
-  --with-oidc
-
-# Update kubeconfig
-aws eks update-kubeconfig --name clo835-cluster --region us-east-1
-
-# Verify cluster
-kubectl get nodes
-```
-
-#### Deploy Application
-
-```bash
-# Create namespace
-kubectl apply -f k8s/namespace.yaml
-
-# Deploy all resources
-kubectl apply -f k8s/
-
-# Check deployment status
-kubectl get all -n final
-
-# Watch pods starting up
-kubectl get pods -n final -w
-```
-
-#### Verify Deployment
-
-```bash
-# Check all resources
-kubectl get all -n final
-
-# Check ConfigMap
-kubectl get configmap -n final
-
-# Check Secrets
-kubectl get secrets -n final
-
-# Check PVC
-kubectl get pvc -n final
-
-# Check Services
-kubectl get services -n final
-
-# Get LoadBalancer URL
-kubectl get service flask-service -n final -o wide
-```
-
-### Option 3: GitOps Deployment with Flux
-
-#### Install Flux
-
-```bash
-# Install Flux CLI
-curl -s https://fluxcd.io/install.sh | sudo bash
-
-# Bootstrap Flux
-flux bootstrap github \
-  --owner=YOUR_USERNAME \
-  --repository=clo835_project \
-  --branch=main \
-  --path=./flux \
-  --personal
-
-# Apply Flux resources
-kubectl apply -f flux/gotk-sync.yaml
 ```
 
 ## 🧪 Testing
@@ -679,59 +536,11 @@ kubectl scale deployment flask-app --replicas=3 -n final
 kubectl get pods -n final
 ```
 
-### Resource Monitoring
-
-```bash
-# Check resource usage
-kubectl top pods -n final
-kubectl top nodes
-
-# Check resource limits
-kubectl describe pods -n final | grep -A 10 "Limits:"
-```
-
-## 🔄 GitOps with Flux
-
-### Flux Commands
-
-```bash
-# Check Flux status
-flux get all
-
-# Check GitRepository
-flux get sources git
-
-# Check Kustomization
-flux get kustomizations
-
-# Check Flux logs
-flux logs
-
-# Reconcile manually
-flux reconcile source git clo835-final-project
-flux reconcile kustomization clo835-final-project
-```
-
-### Update Application via GitOps
-
-```bash
-# Make changes to your manifests
-vim k8s/configmap.yaml
-
-# Commit and push
-git add .
-git commit -m "Update background image URL"
-git push origin main
-
-# Flux will automatically detect and apply changes
-flux get kustomizations
-```
-
 ## 🔍 Troubleshooting
 
 ### Common Issues and Solutions
 
-#### 1. EKS Cluster Creation Fails (IAM Permission Issues)
+#### 1. EKS Cluster Creation Fails
 
 **Problem**: `eksctl create cluster` fails with IAM permission errors
 
@@ -740,12 +549,7 @@ flux get kustomizations
 ```bash
 # Use the working configuration
 eksctl create cluster -f eks-config.yaml
-
-# Alternative: Create cluster via AWS Console
-# Go to EKS Console → Create cluster → Follow the wizard
 ```
-
-**Why this works**: The `eks-config.yaml` uses existing `LabRole` instead of trying to create new IAM roles.
 
 #### 2. Pod Stuck in Pending
 
@@ -760,7 +564,7 @@ kubectl describe nodes
 kubectl get nodes -o custom-columns="NAME:.metadata.name,CPU:.status.capacity.cpu,MEMORY:.status.capacity.memory"
 ```
 
-#### 2. Image Pull Errors
+#### 3. Image Pull Errors
 
 ```bash
 # Check if image exists in ECR
@@ -768,12 +572,9 @@ aws ecr describe-images --repository-name clo835-final-project --region us-east-
 
 # Check pod events for image pull errors
 kubectl describe pod <pod-name> -n final | grep -A 10 "Events:"
-
-# Verify ECR login
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
 ```
 
-#### 3. Database Connection Issues
+#### 4. Database Connection Issues
 
 ```bash
 # Check MySQL pod status
@@ -784,17 +585,11 @@ kubectl logs deployment/mysql -n final
 
 # Test database connectivity
 kubectl exec -it deployment/mysql -n final -- mysql -u root -p -e "SHOW DATABASES;"
-
-# Check service connectivity
-kubectl exec -it deployment/flask-app -n final -- nc -zv mysql-service 3306
 ```
 
-#### 4. S3 Access Issues
+#### 5. S3 Access Issues
 
 ```bash
-# Check IAM role
-aws iam get-role --role-name CLO835-S3-Access-Role
-
 # Check pod annotations
 kubectl get pod <pod-name> -n final -o yaml | grep -A 5 -B 5 "serviceAccountName"
 
@@ -810,7 +605,7 @@ except Exception as e:
 "
 ```
 
-#### 5. LoadBalancer Issues
+#### 6. LoadBalancer Issues
 
 ```bash
 # Check LoadBalancer status
@@ -818,25 +613,78 @@ kubectl get service flask-service -n final
 
 # Check if LoadBalancer has external IP
 kubectl describe service flask-service -n final
-
-# Check security groups
-aws ec2 describe-security-groups --filters "Name=group-name,Values=*eks*"
 ```
 
-#### 6. HPA Not Working
+### Recent Deployment Issues and Solutions
+
+#### Issue 1: AWS Credentials Secret Not Found
+
+**Problem**: Flask pod fails with `Error: secret "aws-credentials" not found`
+
+**Root Cause**: The deployment was trying to use AWS credentials from a secret that doesn't exist.
+
+**Solution**: Remove AWS credential environment variables from the deployment since we're using IRSA:
 
 ```bash
-# Check if metrics server is installed
-kubectl get deployment metrics-server -n kube-system
+# Delete the problematic deployment
+kubectl delete deployment flask-app -n final
 
-# Install metrics server if missing
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+# Edit k8s/flask-deployment.yaml to remove AWS credential env vars
+# Remove these lines:
+# - name: AWS_ACCESS_KEY_ID
+#   valueFrom:
+#     secretKeyRef:
+#       name: aws-credentials
+#       key: access-key-id
+# - name: AWS_SECRET_ACCESS_KEY
+#   valueFrom:
+#     secretKeyRef:
+#       name: aws-credentials
+#       key: secret-access-key
+# - name: AWS_SESSION_TOKEN
+#   valueFrom:
+#     secretKeyRef:
+#       name: aws-credentials
+#       key: session-token
 
-# Check HPA status
-kubectl describe hpa flask-app-hpa -n final
+# Reapply the fixed deployment
+kubectl apply -f k8s/flask-deployment.yaml
+```
 
-# Check if pods have resource requests/limits
-kubectl get pod <pod-name> -n final -o yaml | grep -A 10 "resources:"
+#### Issue 2: PVC Stuck in Pending Status
+
+**Problem**: MySQL pod can't schedule because PVC is not bound
+
+**Root Cause**: EBS CSI driver not installed or not working properly
+
+**Solution**: Install the EBS CSI driver addon:
+
+```bash
+# Install EBS CSI driver
+eksctl create addon --name aws-ebs-csi-driver --cluster clo835-final-project --region us-east-1 --force
+
+# Check PVC status
+kubectl get pvc -n final
+
+# Check EBS CSI driver pods
+kubectl get pods -n kube-system | grep ebs
+```
+
+#### Issue 3: No Worker Nodes Available
+
+**Problem**: `0/2 nodes are available: no nodes available to schedule pods`
+
+**Root Cause**: EKS cluster created without worker nodes
+
+**Solution**: Ensure the eks-config.yaml includes managedNodeGroups:
+
+```yaml
+managedNodeGroups:
+  - name: clo835-workers
+    instanceType: t3.medium
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 4
 ```
 
 ### Debug Commands
@@ -860,7 +708,7 @@ kubectl port-forward deployment/flask-app 8080:81 -n final
 
 ## 🧹 Cleanup
 
-### Option 1: Automated Cleanup
+### Automated Cleanup
 
 ```bash
 # Delete Kubernetes resources
@@ -868,38 +716,13 @@ kubectl delete -f k8s/ --ignore-not-found=true
 kubectl delete namespace final --ignore-not-found=true
 
 # Delete EKS cluster
-eksctl delete cluster --name clo835-cluster --region us-east-1
+eksctl delete cluster --name clo835-final-project --region us-east-1
 
 # Delete ECR repository
 aws ecr delete-repository --repository-name clo835-final-project --force --region us-east-1
 
 # Delete S3 bucket
 aws s3 rb s3://your-clo835-background-images --force
-
-# Delete IAM role
-aws iam detach-role-policy --role-name CLO835-S3-Access-Role --policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
-aws iam delete-role --role-name CLO835-S3-Access-Role
-```
-
-### Option 2: Manual Cleanup (Alternative)
-
-```bash
-# Delete Kubernetes resources
-kubectl delete -f k8s/ --ignore-not-found=true
-kubectl delete namespace final --ignore-not-found=true
-
-# Delete EKS cluster
-eksctl delete cluster --name clo835-cluster --region us-east-1
-
-# Delete ECR repository
-aws ecr delete-repository --repository-name clo835-final-project --force --region us-east-1
-
-# Delete S3 bucket
-aws s3 rb s3://your-clo835-background-images --force
-
-# Delete IAM role
-aws iam detach-role-policy --role-name CLO835-S3-Access-Role --policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
-aws iam delete-role --role-name CLO835-S3-Access-Role
 ```
 
 ### Verify Cleanup
@@ -916,6 +739,60 @@ aws s3 ls s3://your-clo835-background-images
 ```
 
 ## 📚 Reference
+
+### 🚀 Quick Deployment Commands
+
+```bash
+# Complete deployment in one go
+eksctl create cluster -f eks-config.yaml
+aws eks update-kubeconfig --name clo835-final-project --region us-east-1
+
+# Install EBS CSI driver (required for PVC)
+eksctl create addon --name aws-ebs-csi-driver --cluster clo835-final-project --region us-east-1 --force
+
+# Deploy all resources
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/secret.yaml
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/pvc.yaml
+kubectl apply -f k8s/serviceaccount.yaml
+kubectl apply -f k8s/role.yaml
+kubectl apply -f k8s/mysql-deployment.yaml
+kubectl apply -f k8s/mysql-service.yaml
+kubectl apply -f k8s/flask-deployment.yaml
+kubectl apply -f k8s/flask-service.yaml
+kubectl apply -f k8s/hpa.yaml
+
+# Check deployment status
+kubectl get all -n final
+kubectl get pvc -n final
+```
+
+### 🔧 Quick Update Commands
+
+```bash
+# Update ConfigMap
+kubectl patch configmap app-config -n final -p '{"data":{"BACKGROUND_IMAGE_URL":"https://new-image-url"}}'
+
+# Restart deployment to pick up changes
+kubectl rollout restart deployment/flask-app -n final
+
+# Check status
+kubectl get pods -n final
+```
+
+### 🧪 Quick Testing Commands
+
+```bash
+# Test application
+curl $(kubectl get svc flask-service -n final -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+# Test database
+kubectl exec -it deployment/mysql -n final -- mysql -u root -p -e "SHOW DATABASES;"
+
+# Load test for HPA
+hey -n 1000 -c 10 http://$(kubectl get svc flask-service -n final -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+```
 
 ### Useful Commands Cheat Sheet
 
@@ -964,10 +841,6 @@ aws ecr describe-images --repository-name clo835-final-project --region us-east-
 # S3
 aws s3 ls s3://your-clo835-background-images/
 aws s3 cp local-file.jpg s3://your-clo835-background-images/
-
-# IAM
-aws iam get-role --role-name CLO835-S3-Access-Role
-aws iam list-attached-role-policies --role-name CLO835-S3-Access-Role
 ```
 
 #### Docker Commands
@@ -998,51 +871,65 @@ DATABASE=employees
 DBPORT=3306
 
 # Application
-BACKGROUND_IMAGE_URL=https://your-s3-bucket.s3.amazonaws.com/background.jpg
-MY_NAME=Your Name (CLO835 Student)
+BACKGROUND_IMAGE_URL=https://your-s3-bucket.s3.amazonaws.com/background.svg
+MY_NAME=Hamza Hassan, Sanjan Joshua, Rentian Zhang (CLO835 Students)
 ```
 
 #### Important URLs
 
 - **Application**: http://LOADBALANCER_URL
 - **ECR Repository**: https://console.aws.amazon.com/ecr/repositories/clo835-final-project
-- **EKS Cluster**: https://console.aws.amazon.com/eks/clusters/clo835-cluster
+- **EKS Cluster**: https://console.aws.amazon.com/eks/clusters/clo835-final-project
 - **S3 Bucket**: https://console.aws.amazon.com/s3/buckets/your-clo835-background-images
 
-### Performance Tuning
+## 📸 Screenshots & Demo
 
-#### Resource Optimization
+### Application Screenshots
 
-```yaml
-# In k8s/flask-deployment.yaml
-resources:
-  requests:
-    memory: "128Mi"
-    cpu: "100m"
-  limits:
-    memory: "256Mi"
-    cpu: "200m"
-```
+- **Home Page**: Show the application with background image and student name
+- **Add Employee**: Demonstrate adding new employee records
+- **Get Employee**: Show retrieving employee information
+- **Database Persistence**: Show data persistence after pod restart
 
-#### HPA Configuration
+### Deployment Screenshots
 
-```yaml
-# In k8s/hpa.yaml
-spec:
-  minReplicas: 1
-  maxReplicas: 10
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 70
-```
+- **EKS Cluster**: Kubernetes dashboard showing running pods
+- **LoadBalancer**: Application accessible via internet
+- **HPA in Action**: Auto-scaling demonstration
+- **GitHub Actions**: CI/CD pipeline success
+
+### Demo Video Requirements
+
+1. **Local Testing**: Docker container running locally
+2. **GitHub Actions**: Show automated build and push to ECR
+3. **EKS Deployment**: Deploy all manifests to empty namespace
+4. **S3 Integration**: Background image loading from private S3 bucket
+5. **Data Persistence**: Delete/recreate MySQL pod, data remains
+6. **Internet Access**: LoadBalancer URL accessible from browser
+7. **ConfigMap Update**: Change background image, see changes
+8. **Bonus HPA**: Load testing showing auto-scaling
 
 ## 🎓 Assignment Submission Checklist
 
 Before submitting your assignment, ensure you have:
+
+### 🔒 **Security Checklist (CRITICAL!)**
+
+- [ ] **No credentials committed to Git**
+
+  - [ ] AWS access keys not in repository
+  - [ ] AWS secret keys not in repository
+  - [ ] AWS session tokens not in repository
+  - [ ] Database passwords not in repository
+  - [ ] All sensitive files in .gitignore
+
+- [ ] **Repository is secure**
+  - [ ] Run `git log --oneline` to check recent commits
+  - [ ] No sensitive data in commit history
+  - [ ] .gitignore properly configured
+  - [ ] Credentials handled dynamically during deployment
+
+### 📋 **Project Requirements Checklist**
 
 - ✅ **Application Enhancement**
 
@@ -1069,7 +956,7 @@ Before submitting your assignment, ensure you have:
 - ✅ **Bonus Features**
 
   - [ ] HPA configured and working
-  - [ ] Flux GitOps deployed (optional)
+
   - [ ] Auto-scaling demonstrated
 
 - ✅ **Documentation**
@@ -1097,10 +984,20 @@ Before submitting your assignment, ensure you have:
 
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
 - [AWS EKS Documentation](https://docs.aws.amazon.com/eks/)
-- [Flux Documentation](https://fluxcd.io/docs/)
+
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 
 ---
+
+## 📋 Version Information
+
+- **Kubernetes Version**: 1.29.0
+- **EKS Version**: 1.29
+- **Flask Version**: Latest
+- **MySQL Version**: 8.0
+- **Docker Base Image**: python:3.9-slim
+- **AWS Region**: us-east-1
+- **Last Updated**: Winter 2025
 
 ## 📄 License
 
@@ -1108,4 +1005,4 @@ This project is created for educational purposes as part of the CLO835 course at
 
 ---
 
-**🎉 Congratulations! You now have a complete, production-ready containerized application deployed on Amazon EKS with full CI/CD pipeline and GitOps capabilities!**
+**🎉 Congratulations! You now have a complete, production-ready containerized application deployed on Amazon EKS with full CI/CD pipeline and auto-scaling capabilities!**
