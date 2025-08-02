@@ -1,63 +1,80 @@
-# 🚀 CLO835 Final Project - .gitignore
-# Simple and focused ignore patterns
+# AWS Credentials and Secrets
+.aws/
+aws-credentials-secret.yaml
+*credentials*
+*secret*
+*.pem
+*.key
+
+# Environment files
+.env
+.env.local
+.env.production
 
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
-env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
 venv/
-.env
+env/
+ENV/
+env.bak/
+venv.bak/
 
-# Docker
-.dockerignore
-
-# Kubernetes
-*.kubeconfig
-.kube/
-*.pem
-*.key
-*.crt
-
-# AWS
-.aws/
-aws-credentials.json
-*.pem
-*.key
-*.crt
-
-# Cloud9
-.c9/
-.c9project
-.c9settings
-
-# Logs
-*.log
-logs/
-
-# OS files
-.DS_Store
-Thumbs.db
-*.tmp
-*.temp
-
-# Editors
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# Secrets and sensitive files
-secrets/
-*.secret
-*.password
-*.token
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
 
 # Temporary files
-tmp/
-temp/
+*.tmp
+*.temp
+
+# Kubernetes
+*.kubeconfig
+kubeconfig
+
+# Docker
+.dockerignore
+
+# Node modules (if any)
+node_modules/
+
+# Backup files
 *.bak
 *.backup 
