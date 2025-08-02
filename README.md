@@ -126,47 +126,117 @@ curl -s https://fluxcd.io/install.sh | sudo bash
 - **Load Balancer**: ~$0.0225/hour
 - **Total**: ~$15-20/month for development
 
-## ⚡ Quick Start (5 Minutes)
+## ⚡ Quick Start (Step-by-Step Commands)
 
-### 1. Clone and Configure
-
-```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/clo835_project.git
-cd clo835_project
-
-# Update configuration files manually (see Detailed Setup section below)
-```
-
-### 2. Create AWS Resources
+### 1. Prerequisites Check
 
 ```bash
-# Configure AWS credentials
+# Verify tools are installed
+eksctl version
+kubectl version --client
+aws --version
+
+# Configure AWS credentials (if not already done)
 aws configure
-
-# Create ECR repository
-aws ecr create-repository --repository-name clo835-final-project --region us-east-1
-
-# Create S3 bucket (replace with your bucket name)
-aws s3 mb s3://your-clo835-background-images --region us-east-1
-
-# Upload a background image
-aws s3 cp /path/to/your/image.jpg s3://your-clo835-background-images/background.jpg
 ```
 
-### 3. Deploy Everything
+### 2. Create S3 Bucket and Upload Background Image
+
+#### Via AWS Console:
+
+1. Go to AWS S3 Console
+2. Click "Create bucket"
+3. **Bucket name**: `clo835-background-images`
+4. **Region**: US East (N. Virginia) us-east-1
+5. **Block Public Access**: Uncheck "Block all public access"
+6. **Object Ownership**: Select "ACLs enabled"
+7. Click "Create bucket"
+
+#### Upload Background Image:
+
+1. Click on your bucket name
+2. Click "Upload"
+3. Create a file called `background.svg` with this content:
+
+```svg
+<svg width="1200" height="800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#764ba2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f093fb;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#grad1)"/>
+  <text x="600" y="300" font-family="Arial, sans-serif" font-size="48" fill="white" text-anchor="middle" font-weight="bold">CLO835 Final Project</text>
+  <text x="600" y="350" font-family="Arial, sans-serif" font-size="24" fill="white" text-anchor="middle">Container Orchestration with Kubernetes</text>
+  <text x="600" y="400" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle">Hamza - CLO835 Student</text>
+</svg>
+```
+
+4. Upload it as `background.jpg`
+5. Set permissions: "Grant public-read access"
+6. Click "Upload"
+
+### 3. Create EKS Cluster
+
+#### Using ClusterConfig File (Recommended):
 
 ```bash
-# Deploy manually (see Deployment section below)
-# Or use the automated deployment commands
+# Create EKS cluster using the provided configuration
+eksctl create cluster -f eks-config.yaml
+
+# Update kubeconfig
+aws eks update-kubeconfig --name clo835-cluster --region us-east-1
+
+# Verify cluster
+kubectl get nodes
 ```
 
-### 4. Access Your Application
+**Note**: This takes 15-20 minutes to complete.
+
+### 4. Deploy Application
+
+```bash
+# Create namespace
+kubectl create namespace final
+
+# Deploy all resources
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/secret.yaml
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/pvc.yaml
+kubectl apply -f k8s/serviceaccount.yaml
+kubectl apply -f k8s/role.yaml
+kubectl apply -f k8s/mysql-deployment.yaml
+kubectl apply -f k8s/mysql-service.yaml
+kubectl apply -f k8s/flask-deployment.yaml
+kubectl apply -f k8s/flask-service.yaml
+```
+
+### 5. Verify Deployment
+
+```bash
+# Check all resources
+kubectl get all -n final
+
+# Check services
+kubectl get svc -n final
+
+# Check pods
+kubectl get pods -n final
+
+# Watch pods starting up
+kubectl get pods -n final -w
+```
+
+### 6. Access Your Application
 
 ```bash
 # Get the LoadBalancer URL
-kubectl get service flask-service -n final
+kubectl get svc flask-service -n final
 
+# Look for EXTERNAL-IP or LoadBalancer hostname
 # Open the URL in your browser
 ```
 
@@ -182,6 +252,43 @@ aws configure
 # Enter your AWS Secret Access Key
 # Enter your default region (us-east-1)
 # Enter your output format (json)
+```
+
+#### EKS Cluster Configuration
+
+The project includes a working `eks-config.yaml` file that uses existing IAM roles to avoid permission issues:
+
+```yaml
+---
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: clo835-cluster
+  region: "us-east-1"
+  version: "1.29"
+
+availabilityZones: ["us-east-1a", "us-east-1b", "us-east-1c"]
+
+iam:
+  serviceRoleARN: arn:aws:iam::626108377158:role/LabRole
+
+managedNodeGroups:
+  - name: clo835-workers
+    instanceType: t3.medium
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 4
+    iam:
+      instanceRoleARN: arn:aws:iam::626108377158:role/LabRole
+    ssh:
+      enableSsm: true
+```
+
+**To create the cluster:**
+
+```bash
+eksctl create cluster -f eks-config.yaml
 ```
 
 #### Create IAM Role for S3 Access
@@ -543,7 +650,23 @@ flux get kustomizations
 
 ### Common Issues and Solutions
 
-#### 1. Pod Stuck in Pending
+#### 1. EKS Cluster Creation Fails (IAM Permission Issues)
+
+**Problem**: `eksctl create cluster` fails with IAM permission errors
+
+**Solution**: Use the provided `eks-config.yaml` file that uses existing IAM roles:
+
+```bash
+# Use the working configuration
+eksctl create cluster -f eks-config.yaml
+
+# Alternative: Create cluster via AWS Console
+# Go to EKS Console → Create cluster → Follow the wizard
+```
+
+**Why this works**: The `eks-config.yaml` uses existing `LabRole` instead of trying to create new IAM roles.
+
+#### 2. Pod Stuck in Pending
 
 ```bash
 # Check pod events

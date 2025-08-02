@@ -4,5 +4,5 @@ metadata:
   name: app-config
   namespace: final
 data:
-  BACKGROUND_IMAGE_URL: "https://your-s3-bucket.s3.amazonaws.com/background.jpg"
+  BACKGROUND_IMAGE_URL: "https://clo835-background-images.s3.us-east-1.amazonaws.com/background.jpg"
   MY_NAME: "Hamza (CLO835 Student)"

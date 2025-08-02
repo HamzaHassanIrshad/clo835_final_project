@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [dev]
+    branches: [dev-hamza]
   pull_request:
     branches: [main]
 
@@ -36,7 +36,7 @@ jobs:
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/dev-hamza'
 
     steps:
       - name: Checkout code
@@ -56,32 +56,26 @@ jobs:
 
       - name: Create ECR repository if it doesn't exist
         run: |
-          # Check if repository exists, if not create it
           if ! aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY }} --region ${{ env.AWS_REGION }} 2>/dev/null; then
-            echo "Repository ${{ env.ECR_REPOSITORY }} does not exist. Creating it..."
+            echo "Creating ECR repository..."
             aws ecr create-repository \
               --repository-name ${{ env.ECR_REPOSITORY }} \
               --region ${{ env.AWS_REGION }} \
               --image-scanning-configuration scanOnPush=true \
               --encryption-configuration encryptionType=AES256
-            echo "Repository ${{ env.ECR_REPOSITORY }} created successfully!"
           else
-            echo "Repository ${{ env.ECR_REPOSITORY }} already exists."
+            echo "ECR repository already exists."
           fi
 
       - name: Clean up existing images
         run: |
-          echo "Cleaning up existing images in repository..."
-          # Get list of image digests
           IMAGE_DIGESTS=$(aws ecr describe-images \
             --repository-name ${{ env.ECR_REPOSITORY }} \
             --region ${{ env.AWS_REGION }} \
             --query 'imageDetails[].imageDigest' \
             --output text 2>/dev/null || echo "")
-
           if [ ! -z "$IMAGE_DIGESTS" ]; then
-            echo "Found existing images. Deleting them..."
-            # Delete all images in the repository
+            echo "Deleting existing images..."
             aws ecr batch-delete-image \
               --repository-name ${{ env.ECR_REPOSITORY }} \
               --region ${{ env.AWS_REGION }} \
@@ -90,9 +84,8 @@ jobs:
                 --region ${{ env.AWS_REGION }} \
                 --query 'imageDetails[].{imageDigest:imageDigest}' \
                 --output json | jq -r '.[] | "imageDigest=" + .imageDigest' | tr '\n' ' ')
-            echo "Existing images deleted successfully!"
           else
-            echo "No existing images found."
+            echo "No images to delete."
           fi
 
       - name: Build, tag, and push image to Amazon ECR
