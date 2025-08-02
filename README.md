@@ -58,37 +58,29 @@ This is a **CLO835 Final Project** that demonstrates a complete modern cloud-nat
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   GitHub Repo   │───▶│  GitHub Actions  │───▶│  Amazon ECR     │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-         │                                              │
-         │                                              │
-         ▼                                              ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Flux (GitOps) │───▶│  Amazon EKS      │◀───│  Docker Image   │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                              │
-                              ▼
-                    ┌──────────────────┐
-                    │  Application     │
-                    │  ┌─────────────┐ │
-                    │  │   Flask     │ │
-                    │  │   App       │ │
-                    │  └─────────────┘ │
-                    │  ┌─────────────┐ │
-                    │  │   MySQL     │ │
-                    │  │  Database   │ │
-                    │  └─────────────┘ │
-                    └──────────────────┘
-                              │
-                              ▼
-                    ┌──────────────────┐
-                    │  S3 Bucket       │
-                    │  (Background     │
-                    │   Images)        │
-                    └──────────────────┘
-```
+**CI/CD Pipeline:**
+
+- **GitHub Repository** → **GitHub Actions** → **Amazon ECR**
+- Code changes trigger automated builds and push Docker images to ECR
+
+**Deployment:**
+
+- **Flux (GitOps)** monitors the repository and syncs to **Amazon EKS**
+- **EKS Cluster** pulls Docker images from **ECR** and deploys the application
+
+**Application Stack:**
+
+- **Flask Application** (Frontend/Backend)
+- **MySQL Database** (Persistent storage)
+- **S3 Bucket** (Background images)
+
+**Data Flow:**
+
+1. Code pushed to GitHub
+2. GitHub Actions builds and pushes Docker image to ECR
+3. Flux detects changes and deploys to EKS
+4. Application runs with MySQL database
+5. Application fetches background images from S3
 
 ## 📋 Prerequisites
 
