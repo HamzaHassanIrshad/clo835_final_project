@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Get Employee Information</title>
+    <style>
+      body {
+        background-image: url("/static/{{ bg_image }}");
+        background-size: cover;
+        background-repeat: no-repeat;
+        height: 100vh;
+        color: black;
+        font-family: Avenir;
+        text-align: center;
+      }
+
+      form {
+        background-color: rgba(255, 255, 255, 0.8);
+        display: inline-block;
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 30px;
+      }
+
+      .back-button {
+        background: #007bff;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        display: inline-block;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="color: DodgerBlue">Employee Database</h1>
+    <h2>Project by {{ my_name }}</h2>
+
+    <form action="/fetchdata" method="POST" autocomplete="on">
+      Employee ID:<br />
+      <input
+        type="number"
+        name="emp_id"
+        style="height: 25px; font-size: 14pt; color: grey"
+        size="40"
+        required
+      /><br /><br />
+
+      <button
+        type="submit"
+        style="background: grey; height: 45px; width: 200px; color: white"
+      >
+        GET EMPLOYEE INFORMATION</button
+      ><br /><br />
+    </form>
+
+    <a href="/" class="back-button">Back to Home</a>
+  </body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CLO835 Final Project</title>
+    <style>
+      body {
+        background-image: url("/static/{{ bg_image }}");
+        background-size: cover;
+        background-repeat: no-repeat;
+        height: 100vh;
+        color: black;
+        font-family: Avenir;
+        text-align: center;
+      }
+
+      .about-container {
+        background-color: rgba(255, 255, 255, 0.9);
+        display: inline-block;
+        padding: 30px;
+        border-radius: 10px;
+        margin-top: 50px;
+        max-width: 600px;
+      }
+
+      .back-button {
+        background: #007bff;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        display: inline-block;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="about-container">
+      <h1 style="color: DodgerBlue">About Us</h1>
+      <h2>Project by {{ my_name }}</h2>
+
+      <p>This is a CLO835 Final Project demonstrating:</p>
+      <ul style="text-align: left; display: inline-block">
+        <li>Containerized Flask application</li>
+        <li>MySQL database integration</li>
+        <li>Background image from S3 bucket</li>
+        <li>Kubernetes deployment</li>
+        <li>GitHub Actions CI/CD</li>
+        <li>Amazon EKS cluster</li>
+        <li>Persistent Volume Claims (PVC)</li>
+        <li>LoadBalancer service</li>
+        <li>Horizontal Pod Autoscaler (HPA)</li>
+        <li>IAM Roles for Service Accounts (IRSA)</li>
+        <li>ConfigMap for configuration</li>
+        <li>Secrets for database credentials</li>
+        <li>Amazon ECR container registry</li>
+      </ul>
+
+      <p>
+        This application allows you to add and retrieve employee information
+        from a MySQL database with persistent storage and auto-scaling
+        capabilities.
+      </p>
+
+      <p><strong>Key Features:</strong></p>
+      <ul style="text-align: left; display: inline-block">
+        <li>Dynamic background images from S3</li>
+        <li>Database persistence across pod restarts</li>
+        <li>Automatic scaling based on CPU usage</li>
+        <li>Secure credential management</li>
+        <li>Internet-accessible via LoadBalancer</li>
+      </ul>
+
+      <a href="/" class="back-button">Back to Home</a>
+    </div>
+  </body>
+</html>

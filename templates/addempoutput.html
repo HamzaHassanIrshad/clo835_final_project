@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Employee Added</title>
+    <style>
+      body {
+        background-image: url("/static/{{ bg_image }}");
+        background-size: cover;
+        background-repeat: no-repeat;
+        height: 100vh;
+        color: black;
+        font-family: Avenir;
+        text-align: center;
+      }
+
+      .output-container {
+        background-color: rgba(255, 255, 255, 0.9);
+        display: inline-block;
+        padding: 30px;
+        border-radius: 10px;
+        margin-top: 50px;
+      }
+
+      .success-message {
+        color: #28a745;
+        font-size: 18px;
+        margin-bottom: 20px;
+      }
+
+      .back-button {
+        background: #007bff;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        display: inline-block;
+        margin: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="output-container">
+      <h1 style="color: DodgerBlue">Employee Database</h1>
+      <h2>Project by {{ my_name }}</h2>
+
+      <div class="success-message">
+        <h3>Employee Added Successfully!</h3>
+        <p>Employee: <strong>{{ name }}</strong></p>
+      </div>
+
+      <a href="/" class="back-button">Add Another Employee</a>
+      <a href="/getemp" class="back-button">Get Employee Information</a>
+    </div>
+  </body>
+</html>
