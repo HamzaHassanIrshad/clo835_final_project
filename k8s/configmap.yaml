@@ -4,5 +4,5 @@ metadata:
   name: app-config
   namespace: final
 data:
-  BACKGROUND_IMAGE_URL: "https://clo835-background-images.s3.us-east-1.amazonaws.com/background.jpg"
-  MY_NAME: "Hamza (CLO835 Student)"
+  BACKGROUND_IMAGE_URL: "https://clo835-final-project-bucket-g5.s3.us-east-1.amazonaws.com/background.svg"
+  MY_NAME: "Hamza Hassan, Sanjan Joshua, Rentian Zhang (CLO835 Students)"
