@@ -237,10 +237,10 @@ aws sts get-caller-identity
 
 1. Go to AWS S3 Console
 2. Click "Create bucket"
-3. **Bucket name**: `clo835-background-images`
+3. **Bucket name**: `clo835-final-project-bucket-g5`
 4. **Region**: US East (N. Virginia) us-east-1
-5. **Block Public Access**: Uncheck "Block all public access"
-6. **Object Ownership**: Select "ACLs enabled"
+5. **Block Public Access**: Check "Block all public access"
+6. **Object Ownership**: Select "ACLs disabled (recommended)"
 7. Click "Create bucket"
 
 #### Upload Background Image:
@@ -266,7 +266,7 @@ aws sts get-caller-identity
 ```
 
 4. Upload it as `background.svg`
-5. Set permissions: "Grant public-read access"
+5. Set permissions: "No additional permissions needed" (since bucket blocks public access)
 6. Click "Upload"
 
 ### 3. Create EKS Cluster
@@ -349,7 +349,7 @@ kubectl get svc flask-service -n final
 vim k8s/configmap.yaml
 
 # Replace with your actual values:
-# BACKGROUND_IMAGE_URL: "https://your-clo835-background-images.s3.amazonaws.com/background.svg"
+# BACKGROUND_IMAGE_URL: "https://clo835-final-project-bucket-g5.s3.amazonaws.com/background.svg"
 # MY_NAME: "Hamza, Sanjan Joshua, Rentian Zhang (CLO835 Students)"
 ```
 
@@ -413,13 +413,15 @@ Go to your GitHub repository → Settings → Secrets and variables → Actions,
 ```bash
 AWS_ACCESS_KEY_ID=your_access_key
 AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_SESSION_TOKEN=your_session_token
 ```
-
-#### Update Repository URLs
 
 ```bash
-
+# Note: Repository URLs are already configured correctly
+# No updates required for this project
 ```
+
+**Important**: If using AWS Academy, ensure your session token is included in your AWS credentials.
 
 ## 🚀 Deployment
 
@@ -722,7 +724,7 @@ eksctl delete cluster --name clo835-final-project --region us-east-1
 aws ecr delete-repository --repository-name clo835-final-project --force --region us-east-1
 
 # Delete S3 bucket
-aws s3 rb s3://your-clo835-background-images --force
+aws s3 rb s3://clo835-final-project-bucket-g5 --force
 ```
 
 ### Verify Cleanup
@@ -735,7 +737,7 @@ eksctl get cluster --region us-east-1
 aws ecr describe-repositories --region us-east-1
 
 # Check if S3 bucket is deleted
-aws s3 ls s3://your-clo835-background-images
+aws s3 ls s3://clo835-final-project-bucket-g5
 ```
 
 ## 📚 Reference
@@ -839,8 +841,8 @@ aws ecr describe-repositories --region us-east-1
 aws ecr describe-images --repository-name clo835-final-project --region us-east-1
 
 # S3
-aws s3 ls s3://your-clo835-background-images/
-aws s3 cp local-file.jpg s3://your-clo835-background-images/
+aws s3 ls s3://clo835-final-project-bucket-g5/
+aws s3 cp local-file.jpg s3://clo835-final-project-bucket-g5/
 ```
 
 #### Docker Commands
@@ -871,7 +873,7 @@ DATABASE=employees
 DBPORT=3306
 
 # Application
-BACKGROUND_IMAGE_URL=https://your-s3-bucket.s3.amazonaws.com/background.svg
+BACKGROUND_IMAGE_URL=https://clo835-final-project-bucket-g5.s3.amazonaws.com/background.svg
 MY_NAME=Hamza Hassan, Sanjan Joshua, Rentian Zhang (CLO835 Students)
 ```
 
@@ -880,7 +882,7 @@ MY_NAME=Hamza Hassan, Sanjan Joshua, Rentian Zhang (CLO835 Students)
 - **Application**: http://LOADBALANCER_URL
 - **ECR Repository**: https://console.aws.amazon.com/ecr/repositories/clo835-final-project
 - **EKS Cluster**: https://console.aws.amazon.com/eks/clusters/clo835-final-project
-- **S3 Bucket**: https://console.aws.amazon.com/s3/buckets/your-clo835-background-images
+- **S3 Bucket**: https://console.aws.amazon.com/s3/buckets/clo835-final-project-bucket-g5
 
 ## 📸 Screenshots & Demo
 
